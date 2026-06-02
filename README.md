@@ -98,6 +98,13 @@ B8.8
 
 bg.png (遊戲背景圖)
 
+B8.8有準心
+crosshair.png
+
+B9有增加以下三個
+
+
+
 掉落物：
 
 drop_exp.png (經驗值掉落物)
