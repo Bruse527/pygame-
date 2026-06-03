@@ -236,11 +236,11 @@ boss_charger：第二隻 Boss（衝刺突擊者）的動畫幀。
 boss_red：第三隻 Boss（狂戰士）的動畫幀。
 
 
-第一隻段 CoreBoss -> 讀取 boss_yellow 資料夾
+第一隻 CoreBoss -> 讀取 boss_yellow 資料夾
 
-第二隻段 ChargerBoss -> 讀取 boss_charger 資料夾
+第二隻 ChargerBoss -> 讀取 boss_charger 資料夾
 
-第三隻段 BerserkerBoss -> 讀取 boss_red 資料夾
+第三隻 BerserkerBoss -> 讀取 boss_red 資料夾
 
 
 
