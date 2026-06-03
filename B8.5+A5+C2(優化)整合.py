@@ -11,20 +11,49 @@ pygame.mixer.init()
 # 自動切換到英文鍵盤輸入（僅適用於 Windows）
 def switch_to_english_input():
     try:
+        if os.name != "nt":
+            return
         user32 = ctypes.windll.user32
-        hkl = user32.LoadKeyboardLayoutW("00000409", 1)
+        imm32 = ctypes.windll.imm32
+        user32.LoadKeyboardLayoutW.restype = ctypes.c_void_p
+        imm32.ImmGetContext.restype = ctypes.c_void_p
+        hkl = user32.LoadKeyboardLayoutW("00000409", 0x00000101)
         if hkl:
-            user32.ActivateKeyboardLayout(hkl, 0)
+            user32.ActivateKeyboardLayout(hkl, 0x00000100)
+            hwnd = pygame.display.get_wm_info().get("window")
+            if hwnd:
+                user32.PostMessageW(hwnd, 0x0050, 0, hkl)
+                himc = imm32.ImmGetContext(hwnd)
+                if himc:
+                    imm32.ImmSetConversionStatus(himc, 0, 0)
+                    imm32.ImmReleaseContext(hwnd, himc)
     except Exception:
         pass
 
-switch_to_english_input()
-
 # 設定視窗與開放世界大小
-WIDTH, HEIGHT = 1024, 768
+WIDTH, HEIGHT = 1920, 1080
 MAP_WIDTH, MAP_HEIGHT = 4200, 2600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("SPACE WARS")
+WINDOW_FLAGS = getattr(pygame, "SCALED", 0)
+FULLSCREEN_FLAGS = pygame.FULLSCREEN | WINDOW_FLAGS
+is_fullscreen = False
+
+def create_display():
+    flags = FULLSCREEN_FLAGS if is_fullscreen else WINDOW_FLAGS
+    try:
+        surface = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+    except pygame.error:
+        fallback_flags = pygame.FULLSCREEN if is_fullscreen else 0
+        surface = pygame.display.set_mode((WIDTH, HEIGHT), fallback_flags)
+    pygame.display.set_caption("SPACE WARS")
+    switch_to_english_input()
+    return surface
+
+def toggle_fullscreen():
+    global screen, is_fullscreen
+    is_fullscreen = not is_fullscreen
+    screen = create_display()
+
+screen = create_display()
 clock = pygame.time.Clock()
 FPS = 60
 
@@ -2518,6 +2547,10 @@ while running:
         if game_state == "WEAPON_STASH" and event.type == pygame.MOUSEWHEEL: arsenal_scroll_y = max(0, arsenal_scroll_y - event.y * 30)
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F11 or (event.key == pygame.K_RETURN and event.mod & pygame.KMOD_ALT):
+                toggle_fullscreen()
+                continue
+
             if event.key == pygame.K_ESCAPE:
                 if game_state == "PLAYING" and not show_inventory: game_state = "PAUSED"
                 elif game_state == "PLAYING" and show_inventory: show_inventory = False; drag_data = None
