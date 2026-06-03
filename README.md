@@ -215,6 +215,8 @@ enemy_normal：一般小怪的動畫幀。
 
 enemy_elite：菁英怪的動畫幀。
 
+enemy_kamikaze :自爆怪的動畫幀
+
 dummy：地堡內測試假人的動畫幀。(地堡內的打怪測試假人 動畫/或放單張圖也行)
 
 boss_yellow：第一隻 Boss（核心機器人）的動畫幀。
