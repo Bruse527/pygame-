@@ -123,7 +123,7 @@ B8.8
 
 場景背景：
 
-bg.png (遊戲背景圖)
+bg.png (戰鬥地圖背景，尺寸不限，會自動平鋪縮放)
 
 B8.8有準心(目前找步道好的圖片，所以有在遊戲內繪製一個)
 crosshair.png
@@ -194,33 +194,33 @@ bullet_flame.png (火焰噴射特效)
 
 bullet_grenade.png (榴彈)
 
-bullet_enemy.png (Boss與敵人的子彈)
+bullet_enemy.png (Boss和敵人的子彈)
 
 **********************************
-2. 連續動畫資料夾 (在 images/ 內建立「子資料夾」)
+2. 連續動畫資料夾 (在 images/ 內建立 子資料夾 )
 
-只要在以下資料夾放入 1.png, 2.png, 3.png... 程式就會自動輪播動畫：
+這些是子資料夾，會由程式自動生成的，專門用來放角色的連續動作幀
 
-player/ (玩家角色動畫)
+player：玩家走路/待機的動畫幀。
 
-enemy_normal/ (一般小怪動畫)
+enemy_normal：一般小怪的動畫幀。
 
-enemy_elite/ (菁英怪動畫)
+enemy_elite：菁英怪的動畫幀。
 
-boss_yellow/ (黃色幾何守衛 Boss 動畫)
+dummy：地堡內測試假人的動畫幀。(地堡內的打怪測試假人 動畫/或放單張圖也行)
 
-boss_red/ (紅色狂戰士 Boss 動畫)
+boss_yellow：第一隻 Boss（核心機器人）的動畫幀。
 
-boss_purple/ (紫色召喚師 Boss 動畫)
+boss_charger：第二隻 Boss（衝刺突擊者）的動畫幀。
 
-boss_cyan/ (青色天網追蹤者 Boss 動畫)
-
-dummy/ (地堡內的打怪測試假人 動畫/或放單張圖也行)
+boss_red：第三隻 Boss（狂戰士）的動畫幀。
 
 
-第一階段 CoreBoss -> 讀取 boss_yellow 資料夾
-第二階段 ChargerBoss -> 讀取 boss_charger 資料夾
-第三階段 BerserkerBoss -> 讀取 boss_red 資料夾
+第一隻段 CoreBoss -> 讀取 boss_yellow 資料夾
+
+第二隻段 ChargerBoss -> 讀取 boss_charger 資料夾
+
+第三隻段 BerserkerBoss -> 讀取 boss_red 資料夾
 
 
 
