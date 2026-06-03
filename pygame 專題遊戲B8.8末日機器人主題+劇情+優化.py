@@ -131,6 +131,7 @@ load_image("enemy_bullet", "bullet_enemy.png", (18, 18))  # 敵人子彈圖示
 load_animation("player", "player", (40, 40))  # 玩家角色動畫
 load_animation("enemy_normal", "enemy_normal", (35, 35))  # 普通敵人動畫
 load_animation("enemy_elite", "enemy_elite", (50, 50))  # 菁英敵人動畫
+load_animation("enemy_kamikaze", "enemy_kamikaze", (35, 35)) # 自爆怪動畫
 load_animation("dummy", "dummy", (40, 60))  # 訓練假人動畫
 
 load_animation("boss_yellow", "boss_yellow", (100, 100))    # 第一隻 Boss
@@ -1381,11 +1382,24 @@ class Enemy:
         draw_rect = self.rect.copy(); draw_rect.center = draw_center
         
         if self.combat_type == "kamikaze":
-            pygame.draw.circle(surface, ORANGE, draw_center, self.size // 2)
-            for i in range(8):
-                angle = pygame.time.get_ticks() * 0.01 + i * math.pi / 4
-                end_x, end_y = draw_center[0] + math.cos(angle) * (self.size * 0.8), draw_center[1] + math.sin(angle) * (self.size * 0.8)
-                pygame.draw.line(surface, YELLOW, draw_center, (end_x, end_y), 3)
+            # 優先嘗試畫出圖片
+            anim_frames = animations.get("enemy_kamikaze")
+            if anim_frames:
+                img = anim_frames[int(pygame.time.get_ticks() / 100) % len(anim_frames)]
+                if self.dir_x < 0: img = pygame.transform.flip(img, True, False)
+                # 受傷閃白與冰凍發藍
+                if self.hit_timer > 0:
+                    img = img.copy(); img.fill((255, 255, 255, 150), special_flags=pygame.BLEND_RGBA_ADD)
+                elif self.frost_timer > 0:
+                    img = img.copy(); img.fill((100, 200, 255, 100), special_flags=pygame.BLEND_RGBA_MULT)
+                surface.blit(img, img.get_rect(center=draw_center))
+            else:
+                # 如果沒有圖片就畫原本的像素幾何炸彈
+                pygame.draw.circle(surface, ORANGE, draw_center, self.size // 2)
+                for i in range(8):
+                    angle = pygame.time.get_ticks() * 0.01 + i * math.pi / 4
+                    end_x, end_y = draw_center[0] + math.cos(angle) * (self.size * 0.8), draw_center[1] + math.sin(angle) * (self.size * 0.8)
+                    pygame.draw.line(surface, YELLOW, draw_center, (end_x, end_y), 3)
         else:
             # 顯示敵人圖片
             anim_key = "enemy_elite" if self.is_elite else "enemy_normal"
