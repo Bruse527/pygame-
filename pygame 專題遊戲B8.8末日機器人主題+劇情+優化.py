@@ -128,15 +128,15 @@ load_image("bullet_flame_grenade", "bullet_grenade.png", (24, 24))  # 火焰手�
 load_image("bullet_plasma", "bullet_plasma.png", (24, 24))  # 等離子子彈圖示
 load_image("enemy_bullet", "bullet_enemy.png", (18, 18))  # 敵人子彈圖示
 
-load_animation("player", "player", (40, 40))  # 玩家角色動畫
-load_animation("enemy_normal", "enemy_normal", (35, 35))  # 普通敵人動畫
-load_animation("enemy_elite", "enemy_elite", (50, 50))  # 菁英敵人動畫
-load_animation("enemy_kamikaze", "enemy_kamikaze", (35, 35)) # 自爆怪動畫
-load_animation("dummy", "dummy", (40, 60))  # 訓練假人動畫
+load_animation("player", "player", (60, 60))  # 玩家角色動畫
+load_animation("enemy_normal", "enemy_normal", (55, 55))  # 普通敵人動畫
+load_animation("enemy_elite", "enemy_elite", (75, 75))  # 菁英敵人動畫
+load_animation("enemy_kamikaze", "enemy_kamikaze", (55, 55)) # 自爆怪動畫
+load_animation("dummy", "dummy", (50, 75))  # 訓練假人動畫
 
-load_animation("boss_yellow", "boss_yellow", (100, 100))    # 第一隻 Boss
-load_animation("boss_charger", "boss_charger", (120, 120))  # 第二隻 Boss
-load_animation("boss_red", "boss_red", (130, 130))          # 第三隻 Boss
+load_animation("boss_yellow", "boss_yellow", (150, 150))    # 第一隻 Boss
+load_animation("boss_charger", "boss_charger", (180, 180))  # 第二隻 Boss
+load_animation("boss_red", "boss_red", (195, 195))          # 第三隻 Boss
 
 load_sound("dash", "dash.wav")  # 衝刺音效
 load_sound("hit", "hit.wav")  # 攻擊命中音效
@@ -512,7 +512,7 @@ class DialogueManager:
         self.current_script = []
         self.index = 0
         self.previous_state = "MENU"
-    # 開始一段對話腳本，並記錄之前的遊戲狀態以便結束後恢復
+        
     def start(self, script_key, prev_state):
         if script_key not in STORY_SCRIPTS: return
         self.current_script = STORY_SCRIPTS[script_key]
@@ -521,8 +521,10 @@ class DialogueManager:
         self.previous_state = prev_state
         global game_state
         game_state = "DIALOGUE"  # 切換到對話狀態，凍結遊戲
-    # 前進對話腳本，結束後回到之前的遊戲狀態
+        play_sound("exp")        # 對話彈出時的提示音效
+
     def next_line(self):
+        play_sound("exp")        # 玩家點擊下一句時的按鍵音效
         self.index += 1
         if self.index >= len(self.current_script):
             self.active = False
@@ -3223,11 +3225,16 @@ while running:
         glow_color = (0, 100, 255, 50)
         glow_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         title = large_font.render("末日肉鴿生存", True, BLUE)
-        glow_surface.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 120))
+        title_glow = large_font.render("末日肉鴿生存", True, (0, 100, 255))
+        title_glow.set_alpha(80) # 設定半透明
+        title_x, title_y = WIDTH//2 - title.get_width()//2, HEIGHT//2 - 120
+        
+        # 畫出 8 個方向的光暈
         for offset in [(-2, -2), (-2, 2), (2, -2), (2, 2), (0, -3), (0, 3), (-3, 0), (3, 0)]:
-            glow_copy = glow_surface.copy(); glow_copy.fill(glow_color, special_flags=pygame.BLEND_RGBA_MULT)
-            screen.blit(glow_copy, offset)
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 120))
+            screen.blit(title_glow, (title_x + offset[0], title_y + offset[1]))
+        
+        # 畫出主文字
+        screen.blit(title, (title_x, title_y))
         screen.blit(font.render("末日肉鴿RPG", True, WHITE), (WIDTH//2 - 60, HEIGHT//2 - 50))
 
         draw_hover_button(screen, start_button, "開始遊戲", (50, 150, 50), (100, 200, 100))
