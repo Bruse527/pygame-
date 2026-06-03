@@ -128,15 +128,15 @@ load_image("bullet_flame_grenade", "bullet_grenade.png", (24, 24))  # 火焰手�
 load_image("bullet_plasma", "bullet_plasma.png", (24, 24))  # 等離子子彈圖示
 load_image("enemy_bullet", "bullet_enemy.png", (18, 18))  # 敵人子彈圖示
 
-load_animation("player", "player", (60, 60))  # 玩家角色動畫
-load_animation("enemy_normal", "enemy_normal", (55, 55))  # 普通敵人動畫
-load_animation("enemy_elite", "enemy_elite", (75, 75))  # 菁英敵人動畫
-load_animation("enemy_kamikaze", "enemy_kamikaze", (55, 55)) # 自爆怪動畫
-load_animation("dummy", "dummy", (50, 75))  # 訓練假人動畫
+load_animation("player", "player", (65, 65))  # 玩家角色動畫
+load_animation("enemy_normal", "enemy_normal", (60, 60))  # 普通敵人動畫
+load_animation("enemy_elite", "enemy_elite", (80, 80))  # 菁英敵人動畫
+load_animation("enemy_kamikaze", "enemy_kamikaze", (60, 60)) # 自爆怪動畫
+load_animation("dummy", "dummy", (55, 80))  # 訓練假人動畫
 
-load_animation("boss_yellow", "boss_yellow", (150, 150))    # 第一隻 Boss
-load_animation("boss_charger", "boss_charger", (180, 180))  # 第二隻 Boss
-load_animation("boss_red", "boss_red", (195, 195))          # 第三隻 Boss
+load_animation("boss_yellow", "boss_yellow", (155, 155))    # 第一隻 Boss
+load_animation("boss_charger", "boss_charger", (185, 185))  # 第二隻 Boss
+load_animation("boss_red", "boss_red", (200, 200))          # 第三隻 Boss
 
 load_sound("dash", "dash.wav")  # 衝刺音效
 load_sound("hit", "hit.wav")  # 攻擊命中音效
@@ -445,10 +445,9 @@ def draw_changelog_popup(surface):
     draw_hover_button(surface, close_rect, "X", (180, 60, 60), RED, WHITE)
     logs = [
         "修復項目與優化內容:",
-        "- 全新三大階段 Boss 系統加入！",
-        "- 修復：傷害數字與特效凍結在畫面的問題。",
-        "- 修復：Boss 行為凍結的問題。",
-        "- 成功撤離會完美保留所有狀態。",
+        "- 全新三大階段 Boss 系統",
+        "- 修復傷害數字與特效凍結在畫面的問題。",
+        "- 修復Boss 行為凍結的問題。",
     ]
     for i, line in enumerate(logs):
         surface.blit(small_font.render(line, True, WHITE), (rect.x + 20, rect.y + 60 + i * 30))
