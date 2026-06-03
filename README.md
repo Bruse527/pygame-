@@ -217,6 +217,13 @@ boss_cyan/ (青色天網追蹤者 Boss 動畫)
 
 dummy/ (地堡內的打怪測試假人 動畫/或放單張圖也行)
 
+
+第一階段 CoreBoss -> 讀取 boss_yellow 資料夾
+第二階段 ChargerBoss -> 讀取 boss_charger 資料夾
+第三階段 BerserkerBoss -> 讀取 boss_red 資料夾
+
+
+
 **********************************
 3. 音效檔案 (放在 audio/ 資料夾)
 
