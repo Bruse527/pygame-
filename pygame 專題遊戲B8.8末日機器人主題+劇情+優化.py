@@ -464,8 +464,16 @@ def draw_player_inv_grid(surface, start_x, start_y, m_x, m_y, allow_weapons=True
         item = player.inventory[i]
         if item and not (drag_data and drag_data["source"] == "PLAYER" and drag_data["idx"] == i):
             if item.type == "WEAPON":
-                if allow_weapons: pygame.draw.circle(surface, get_rarity_color(item.weapon_obj.rarity), rect.center, 14)
-                else: pygame.draw.circle(surface, (60, 60, 60), rect.center, 14)
+                if allow_weapons:
+                    # 在 UI 背包中畫出槍枝圖片
+                    gun_img = images.get("gun_" + item.weapon_obj.base_name)
+                    if gun_img:
+                        scaled_gun = pygame.transform.scale(gun_img, (40, 16))
+                        surface.blit(scaled_gun, scaled_gun.get_rect(center=rect.center))
+                    else:
+                        pygame.draw.circle(surface, get_rarity_color(item.weapon_obj.rarity), rect.center, 14)
+                else: 
+                    pygame.draw.circle(surface, (60, 60, 60), rect.center, 14)
             else:
                 c = HP_COLOR if item.type == "MED" else (SCRAP_COLOR if item.type == "SCRAP" else YELLOW)
                 pygame.draw.circle(surface, c, rect.center, 14)
@@ -978,13 +986,23 @@ class Chest:
         self.color = (139, 69, 19) if c_type == "NORMAL" else (218, 165, 32)
     def draw(self, surface):
         dx, dy = int(self.x - camera_x), int(self.y - camera_y)
-        draw_rect = self.rect.copy(); draw_rect.center = (dx, dy)
-        if self.state == "CLOSED":
-            pygame.draw.rect(surface, self.color, draw_rect, border_radius=5)
-            pygame.draw.rect(surface, WHITE if self.type=="NORMAL" else YELLOW, draw_rect, 2, border_radius=5)
-            if self.type == "LOCKED": pygame.draw.circle(surface, BLACK, (dx, dy), 6) 
-            if self.open_progress > 0: pygame.draw.rect(surface, GRAY, (dx-25, dy-30, 50, 6)); pygame.draw.rect(surface, GREEN, (dx-25, dy-30, 50*(self.open_progress/40), 6))
-        else: pygame.draw.rect(surface, (80,40,10), pygame.Rect(dx-25, dy+2, 50, 15), border_radius=3)
+        # 優先顯示寶箱圖片
+        img_key = f"chest_{self.type}_{self.state}"
+        img = images.get(img_key)
+        if img:
+            surface.blit(img, img.get_rect(center=(dx, dy)))
+            if self.state == "CLOSED" and self.open_progress > 0:
+                pygame.draw.rect(surface, GRAY, (dx-25, dy-30, 50, 6))
+                pygame.draw.rect(surface, GREEN, (dx-25, dy-30, 50*(self.open_progress/40), 6))
+        else:
+            draw_rect = self.rect.copy(); draw_rect.center = (dx, dy)
+            if self.state == "CLOSED":
+                pygame.draw.rect(surface, self.color, draw_rect, border_radius=5)
+                pygame.draw.rect(surface, WHITE if self.type=="NORMAL" else YELLOW, draw_rect, 2, border_radius=5)
+                if self.type == "LOCKED": pygame.draw.circle(surface, BLACK, (dx, dy), 6) 
+                if self.open_progress > 0: pygame.draw.rect(surface, GRAY, (dx-25, dy-30, 50, 6)); pygame.draw.rect(surface, GREEN, (dx-25, dy-30, 50*(self.open_progress/40), 6))
+            else: 
+                pygame.draw.rect(surface, (80,40,10), pygame.Rect(dx-25, dy+2, 50, 15), border_radius=3)
 # 玩家遺失物類別，當玩家死亡時會在原地生成一個遺失物，包含玩家的等級、經驗、升級次數、背包物品和武器，玩家可以觸碰拾取並恢復這些資訊
 class PlayerLostItem:
     def __init__(self, x, y, level, exp, upgrades, inv_items, w1, w2):
@@ -1230,8 +1248,15 @@ class Bullet:
     # 根據子彈的類型和屬性繪製不同的圖案，例如圓形、菱形、斜線或核心，並根據是否暴擊使用不同的顏色和效果    
     def draw(self, surface):
         draw_center = (int(self.rect.centerx - camera_x), int(self.rect.centery - camera_y))
-        pygame.draw.circle(surface, self.color, draw_center, self.radius)
-        if self.is_crit: pygame.draw.circle(surface, RED, draw_center, self.radius+2, 1)
+        img = images.get("bullet_" + self.b_type)
+        if img:
+            angle = math.degrees(math.atan2(-self.dir_y, self.dir_x))
+            rotated_img = pygame.transform.rotate(img, angle)
+            surface.blit(rotated_img, rotated_img.get_rect(center=draw_center))
+            if self.is_crit: pygame.draw.circle(surface, RED, draw_center, self.radius+4, 1)
+        else:
+            pygame.draw.circle(surface, self.color, draw_center, self.radius)
+            if self.is_crit: pygame.draw.circle(surface, RED, draw_center, self.radius+2, 1)
 # 敵人子彈類別，與玩家子彈類似，但會有一些不同的屬性和行為，例如可能會有導引但不會暴擊，或者有特殊的子彈類型和效果
 class EnemyBullet:
     def __init__(self, x, y, dir_x, dir_y, color=ORANGE, core_color=WHITE, style="round", is_homing=False, weapon=None):
@@ -1269,25 +1294,30 @@ class EnemyBullet:
     # 根據子彈的類型和屬性繪製不同的圖案，例如圓形、菱形、斜線或核心，並根據是否暴擊使用不同的顏色和效果    
     def draw(self, surface): 
         draw_center = (int(self.rect.centerx - camera_x), int(self.rect.centery - camera_y))
-        pygame.draw.circle(surface, BLACK, draw_center, self.radius + 4)
-        pygame.draw.circle(surface, self.color, draw_center, self.radius + 2)
-        if hasattr(self, 'style'):
-            if self.style == "diamond":
-                pts = [
-                    (draw_center[0], draw_center[1] - self.radius - 1), (draw_center[0] + self.radius + 1, draw_center[1]),
-                    (draw_center[0], draw_center[1] + self.radius + 1), (draw_center[0] - self.radius - 1, draw_center[1])
-                ]
-                pygame.draw.polygon(surface, getattr(self, 'core_color', WHITE), pts)
-            elif self.style == "slash":
-                side = pygame.math.Vector2(self.dir_x, self.dir_y).rotate(90)
-                front = pygame.math.Vector2(draw_center) + pygame.math.Vector2(self.dir_x, self.dir_y) * (self.radius + 4)
-                back = pygame.math.Vector2(draw_center) - pygame.math.Vector2(self.dir_x, self.dir_y) * (self.radius + 4)
-                left = pygame.math.Vector2(draw_center) + side * 4
-                right = pygame.math.Vector2(draw_center) - side * 4
-                pts = [(int(front.x), int(front.y)), (int(left.x), int(left.y)), (int(back.x), int(back.y)), (int(right.x), int(right.y))]
-                pygame.draw.polygon(surface, getattr(self, 'core_color', WHITE), pts)
+        
+        # 顯示敵人子彈圖片
+        img = images.get("enemy_bullet")
+        if img:
+            angle = math.degrees(math.atan2(-self.dir_y, self.dir_x))
+            rotated_img = pygame.transform.rotate(img, angle)
+            surface.blit(rotated_img, rotated_img.get_rect(center=draw_center))
+        else:
+            # 備用像素幾何圖形
+            pygame.draw.circle(surface, BLACK, draw_center, self.radius + 4)
+            pygame.draw.circle(surface, self.color, draw_center, self.radius + 2)
+            if hasattr(self, 'style'):
+                if self.style == "diamond":
+                    pts = [(draw_center[0], draw_center[1] - self.radius - 1), (draw_center[0] + self.radius + 1, draw_center[1]), (draw_center[0], draw_center[1] + self.radius + 1), (draw_center[0] - self.radius - 1, draw_center[1])]
+                    pygame.draw.polygon(surface, getattr(self, 'core_color', WHITE), pts)
+                elif self.style == "slash":
+                    side = pygame.math.Vector2(self.dir_x, self.dir_y).rotate(90)
+                    front = pygame.math.Vector2(draw_center) + pygame.math.Vector2(self.dir_x, self.dir_y) * (self.radius + 4)
+                    back = pygame.math.Vector2(draw_center) - pygame.math.Vector2(self.dir_x, self.dir_y) * (self.radius + 4)
+                    left, right = pygame.math.Vector2(draw_center) + side * 4, pygame.math.Vector2(draw_center) - side * 4
+                    pts = [(int(front.x), int(front.y)), (int(left.x), int(left.y)), (int(back.x), int(back.y)), (int(right.x), int(right.y))]
+                    pygame.draw.polygon(surface, getattr(self, 'core_color', WHITE), pts)
+                else: pygame.draw.circle(surface, getattr(self, 'core_color', WHITE), draw_center, max(3, self.radius // 2))
             else: pygame.draw.circle(surface, getattr(self, 'core_color', WHITE), draw_center, max(3, self.radius // 2))
-        else: pygame.draw.circle(surface, getattr(self, 'core_color', WHITE), draw_center, max(3, self.radius // 2))
 # 敵人類別，包含普通敵人和精英敵人，會根據等級和遊戲模式生成不同的屬性和行為，並在更新時處理移動、攻擊、狀態效果和其他邏輯
 class Enemy:
     def __init__(self, level, is_elite=False, spawn_x=MAP_WIDTH/2, spawn_y=MAP_HEIGHT/2):
@@ -3043,10 +3073,24 @@ while running:
             for i, wep in enumerate(arsenal_weapons_list):
                 col, row = i % 2, i // 2; box = pygame.Rect(col*335 + 10, row*50 + 5, 315, 42)
                 is_sel = (i == selected_arsenal_idx)
-                pygame.draw.rect(list_surf, (40, 45, 55), box, border_radius=6); pygame.draw.rect(list_surf, YELLOW if is_sel else GRAY, box, 2 if is_sel else 1, border_radius=6)
-                c = get_rarity_color(wep.rarity); name_surf = small_font.render(wep.full_name, True, c); list_surf.blit(name_surf, (box.x + 10, box.y + 10))
+                pygame.draw.rect(list_surf, (40, 45, 55), box, border_radius=6)
+                pygame.draw.rect(list_surf, YELLOW if is_sel else GRAY, box, 2 if is_sel else 1, border_radius=6)
+                
+                c = get_rarity_color(wep.rarity)
+                # 在武器箱清單中畫出槍枝圖片 
+                gun_img = images.get("gun_" + wep.base_name)
+                if gun_img:
+                    list_surf.blit(gun_img, (box.x + 10, box.centery - 9))
+                    name_surf = small_font.render(wep.full_name, True, c)
+                    list_surf.blit(name_surf, (box.x + 60, box.y + 10))
+                else:
+                    name_surf = small_font.render(wep.full_name, True, c)
+                    list_surf.blit(name_surf, (box.x + 10, box.y + 10))
+                    
                 aff_txt = ",".join(wep.affixes) if wep.affixes else "無"
-                stat_surf = tiny_font.render(f"傷:{wep.damage} [{aff_txt}]", True, WHITE); list_surf.blit(stat_surf, (box.right - stat_surf.get_width() - 10, box.y + 14))
+                stat_surf = tiny_font.render(f"傷:{wep.damage} [{aff_txt}]", True, WHITE)
+                list_surf.blit(stat_surf, (box.right - stat_surf.get_width() - 10, box.y + 14))
+                
                 if box.collidepoint(m_x - list_rect.x, m_y - list_rect.y + arsenal_scroll_y) and list_rect.collidepoint(m_pos):
                     pygame.draw.rect(list_surf, WHITE, box, 1, border_radius=6)
                     hovered_slot_info = {"source": "ARSENAL", "idx": i, "item": create_item("WEAPON", 1, wep)}
@@ -3056,13 +3100,23 @@ while running:
 
             for i in range(24):
                 rect = pygame.Rect(p_start_x_w + (i%12)*58, p_start_y_w + (i//12)*58, 50, 50)
-                pygame.draw.rect(screen, (25, 28, 35), rect, border_radius=6); pygame.draw.rect(screen, (55, 60, 70), rect, 1, border_radius=6)
+                pygame.draw.rect(screen, (25, 28, 35), rect, border_radius=6)
+                pygame.draw.rect(screen, (55, 60, 70), rect, 1, border_radius=6)
                 item = player.inventory[i]
                 if item:
                     if item.type == "WEAPON":
-                        pygame.draw.circle(screen, get_rarity_color(item.weapon_obj.rarity), rect.center, 14)
-                        if rect.collidepoint(m_x, m_y): hovered_slot_info = {"source": "PLAYER", "idx": i, "item": item}; pygame.draw.rect(screen, WHITE, rect, 2, border_radius=6)
-                    else: pygame.draw.circle(screen, (60,60,60), rect.center, 14)
+                        # 武器箱的背包畫出圖片
+                        gun_img = images.get("gun_" + item.weapon_obj.base_name)
+                        if gun_img:
+                            scaled_gun = pygame.transform.scale(gun_img, (40, 16))
+                            screen.blit(scaled_gun, scaled_gun.get_rect(center=rect.center))
+                        else:
+                            pygame.draw.circle(screen, get_rarity_color(item.weapon_obj.rarity), rect.center, 14)
+                        if rect.collidepoint(m_x, m_y): 
+                            hovered_slot_info = {"source": "PLAYER", "idx": i, "item": item}
+                            pygame.draw.rect(screen, WHITE, rect, 2, border_radius=6)
+                    else: 
+                        pygame.draw.circle(screen, (60,60,60), rect.center, 14)
 
             draw_hover_button(screen, btn_prim_w, "裝備為主武器", GREEN, (50, 180, 50), BLACK)
             draw_hover_button(screen, btn_sec_w, "裝備為副武器", BLUE, (50, 100, 180), WHITE)
@@ -3083,12 +3137,18 @@ while running:
 
     elif game_state in ["PLAYING", "PAUSED", "LEVEL_UP", "DIED"] or (game_state == "DIALOGUE" and dialogue_sys.previous_state == "PLAYING"):
         if images.get("bg"):
-            bg_w, bg_h = WIDTH, HEIGHT
-            for x in range(0, MAP_WIDTH, bg_w):
-                for y in range(0, MAP_HEIGHT, bg_h):
-                    draw_x, draw_y = x - int(camera_x), y - int(camera_y)
-                    if draw_x + bg_w > 0 and draw_x < WIDTH and draw_y + bg_h > 0 and draw_y < HEIGHT: screen.blit(images["bg"], (draw_x, draw_y))
-        else: screen.fill(BLACK)
+            bg_img = images["bg"]
+            bg_w, bg_h = bg_img.get_width(), bg_img.get_height()
+            
+            # 無縫平鋪背景會跟著攝影機移動
+            start_x = - (int(camera_x) % bg_w)
+            start_y = - (int(camera_y) % bg_h)
+            
+            for x in range(start_x, WIDTH, bg_w):
+                for y in range(start_y, HEIGHT, bg_h):
+                    screen.blit(bg_img, (x, y))
+        else: 
+            screen.fill(BLACK)
         pygame.draw.rect(screen, RED, (-int(camera_x), -int(camera_y), MAP_WIDTH, MAP_HEIGHT), 5)
         
         if extraction_pt: extraction_pt.draw(screen)
