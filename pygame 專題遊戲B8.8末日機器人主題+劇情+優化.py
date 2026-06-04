@@ -445,7 +445,7 @@ def draw_changelog_popup(surface):
     draw_hover_button(surface, close_rect, "X", (180, 60, 60), RED, WHITE)
     logs = [
         "修復項目與優化內容:",
-        "- 全新三大階段 Boss 系統",
+        "- 全新三個 Boss 系統",
         "- 修復傷害數字與特效凍結在畫面的問題。",
         "- 修復Boss 行為凍結的問題。",
     ]
@@ -1497,6 +1497,7 @@ class CoreBoss:
     def update(self, player_x, player_y, bullets, enemies, enemy_bullets):
         self.state_timer += 1
         player_pos = pygame.math.Vector2(player_x, player_y)
+        self.flip_x = player_pos.x < self.pos.x  # 盯著玩家的方向
         if getattr(self, 'hit_timer', 0) > 0: self.hit_timer -= 1
         if self.frost_timer > 0: self.frost_timer -= 1
         if self.burn_timer > 0:
@@ -1595,7 +1596,9 @@ class CoreBoss:
             
             if anim_frames:
                 img = anim_frames[int(pygame.time.get_ticks() / 150) % len(anim_frames)]
-                img = pygame.transform.scale(img, (current_size, current_size))
+                if getattr(self, 'flip_x', False): img = pygame.transform.flip(img, True, False) 
+                if getattr(self, 'hit_timer', 0) > 0: img = img.copy(); img.fill((255, 255, 255, 150), special_flags=pygame.BLEND_RGBA_ADD)
+                elif self.frost_timer > 0: img = img.copy(); img.fill((100, 200, 255, 100), special_flags=pygame.BLEND_RGBA_MULT)
                 surface.blit(img, img.get_rect(center=(cx, cy)))
             else:
                 draw_threat_core(current_size, core_color)
@@ -1630,7 +1633,7 @@ class CoreBoss:
                 
             if self.state == "EVADE": pygame.draw.circle(surface, WHITE, (cx, cy), self.size//2 + 24, 3)
             elif self.state == "CHARGE": pygame.draw.circle(surface, RED, (cx, cy), self.size//2 + max(0, 30 - (self.state_timer // 2)) + 18, 3)
-# 第二階段 BOSS，會在第一階段核心被擊敗後生成，具有更激烈的攻擊模式和更高的難度，並在更新時處理狀態轉換、移動、攻擊、受傷和其他邏輯
+# 第二隻 BOSS，會在第一隻核心被擊敗後生成，具有更激烈的攻擊模式和更高的難度，並在更新時處理狀態轉換、移動、攻擊、受傷和其他邏輯
 class ChargerBoss:
     def __init__(self, spawn_level=5, player_x=0, player_y=0):
         spawn_center = pygame.math.Vector2(player_x, player_y)
@@ -1653,10 +1656,15 @@ class ChargerBoss:
         self.charge_direction, self.charge_target = pygame.math.Vector2(1, 0), self.pos.copy()
         self.side_fire_timer, self.spin_fire_timer, self.spin_angle = 0, 0, 0
         self.frost_timer, self.burn_timer, self.hit_timer = 0, 0, 0
+
     # 更新函式，會根據當前狀態和計時器控制 BOSS 的行為，包括入場移動、瞄準玩家、衝刺攻擊、回復階段和被擊敗後的動畫，並在適當的時候發射攻擊
     def update(self, player_x, player_y, bullets, enemies, enemy_bullets):
         self.state_timer += 1
         player_pos = pygame.math.Vector2(player_x, player_y)
+        
+        # 決定 Boss 面向的方向：衝刺時看著衝刺方向，其他時候看著玩家
+        self.flip_x = self.charge_direction.x < 0 if self.state == "DASH" else player_pos.x < self.pos.x
+        
         if getattr(self, 'hit_timer', 0) > 0: self.hit_timer -= 1
         if self.frost_timer > 0: self.frost_timer -= 1
         if self.burn_timer > 0:
@@ -1695,7 +1703,8 @@ class ChargerBoss:
         self.emit_attacks(enemy_bullets)
 
     def can_take_damage(self): return self.state not in ("ENTRANCE", "DASH", "DEFEAT")
-    # 第二階段 BOSS 的攻擊函式，會根據當前狀態和計時器發射不同類型的子彈，包括衝刺時的前方和側面攻擊，以及回復時的旋轉彈幕，並在發射時播放音效
+
+    # 第二隻 BOSS 的攻擊函式，會根據當前狀態和計時器發射不同類型的子彈，包括衝刺時的前方和側面攻擊，以及回復時的旋轉彈幕，並在發射時播放音效
     def emit_attacks(self, enemy_bullets):
         if self.state == "DASH" and self.side_fire_timer % 5 == 0:
             side_a, side_b = self.charge_direction.rotate(90), self.charge_direction.rotate(-90)
@@ -1722,12 +1731,13 @@ class ChargerBoss:
             play_sound("shoot_cannon")
 
     def get_intro_title(self): return f"{self.name} 登場！"
-    def get_intro_lines(self): return ["警告：第二階段 BOSS 出現！", "黃色軌道代表即將衝刺，紅色時會高速突進。", "看到箭頭後立刻閃開，衝刺後再反擊。"]
+    def get_intro_lines(self): return ["警告：第二隻 BOSS 出現！", "黃色軌道代表即將衝刺，紅色時會高速突進。", "看到箭頭後立刻閃開，衝刺後再反擊。"]
     def get_state_message(self):
         if self.state == "AIM": return "瞄準階段 - 即將衝刺", YELLOW
         if self.state == "DASH": return "衝刺階段 - 暫時無法受傷", RED
         if self.state == "RECOVER": return "回復階段 - 可以攻擊", PURPLE
         return "BOSS 戰鬥中", WHITE
+
     # Boss 的繪製函式，會根據當前狀態和動畫效果繪製核心的外觀、攻擊預兆、受傷閃爍等視覺元素，並在 DEFEAT 狀態下繪製爆炸效果
     def draw(self, surface):
         cx, cy = (round(self.x - camera_x), round(self.y - camera_y))
@@ -1739,6 +1749,7 @@ class ChargerBoss:
         wing_left, wing_right = pygame.math.Vector2(cx, cy) + direction.rotate(90) * (self.size // 2 + 24), pygame.math.Vector2(cx, cy) + direction.rotate(-90) * (self.size // 2 + 24)
 
         core_color = WHITE if getattr(self, 'hit_timer', 0) > 0 else ((100, 200, 255) if self.frost_timer > 0 else self.color)
+        anim_frames = animations.get("boss_charger") # 讀取第二隻Boss圖片
 
         if self.state == "ENTRANCE":
             for i in range(4): pygame.draw.circle(surface, (255, 90, 90), (cx, cy), self.size // 2 + 18 + i * 16 + int(pulse * 8), 2)
@@ -1759,8 +1770,17 @@ class ChargerBoss:
             pygame.draw.polygon(surface, (120, 30, 35), broken_points); pygame.draw.polygon(surface, RED, broken_points, 2)
             pygame.draw.circle(surface, (255, 120, 40), (cx, cy), max(2, int(16 * (1 - progress))), 2)
         else:
-            pygame.draw.polygon(surface, core_color, body_points); pygame.draw.polygon(surface, WHITE, body_points, 3)
-            pygame.draw.circle(surface, BLACK, (cx, cy), 14); pygame.draw.circle(surface, RED if self.state == "DASH" else YELLOW, (cx, cy), 8)
+            if anim_frames:
+                img = anim_frames[int(pygame.time.get_ticks() / 150) % len(anim_frames)]
+                #   盯著玩家或衝刺方向轉身
+                if getattr(self, 'flip_x', False): img = pygame.transform.flip(img, True, False) 
+                
+                if getattr(self, 'hit_timer', 0) > 0: img = img.copy(); img.fill((255, 255, 255, 150), special_flags=pygame.BLEND_RGBA_ADD)
+                elif self.frost_timer > 0: img = img.copy(); img.fill((100, 200, 255, 100), special_flags=pygame.BLEND_RGBA_MULT)
+                surface.blit(img, img.get_rect(center=(cx, cy)))
+            else:
+                pygame.draw.polygon(surface, core_color, body_points); pygame.draw.polygon(surface, WHITE, body_points, 3)
+                pygame.draw.circle(surface, BLACK, (cx, cy), 14); pygame.draw.circle(surface, RED if self.state == "DASH" else YELLOW, (cx, cy), 8)
 
         if self.state == "AIM":
             aim_ratio = min(1, self.state_timer / 70); shrink = 1 - aim_ratio
@@ -1789,7 +1809,7 @@ class ChargerBoss:
             for i in range(6):
                 tip = pygame.math.Vector2(cx, cy) + pygame.math.Vector2(math.cos(self.spin_angle + i * math.pi / 3), math.sin(self.spin_angle + i * math.pi / 3)) * 95
                 pygame.draw.line(surface, PURPLE, (cx, cy), (int(tip.x), int(tip.y)), 2)
-# 第三階段 BOSS，會在第二階段充能者被擊敗後生成，具有最具挑戰性的攻擊模式和最高的難度，並在更新時處理狀態轉換、移動、攻擊、受傷和其他邏輯
+# 第三隻 BOSS，會在第二隻充能者被擊敗後生成，具有最具挑戰性的攻擊模式和最高的難度，並在更新時處理狀態轉換、移動、攻擊、受傷和其他邏輯
 class BerserkerBoss:
     def __init__(self, spawn_level=5, player_x=0, player_y=0):
         spawn_center = pygame.math.Vector2(player_x, player_y)
@@ -1819,6 +1839,7 @@ class BerserkerBoss:
         self.state_timer += 1
         player_pos = pygame.math.Vector2(player_x, player_y)
         self.last_player_pos = player_pos.copy()
+        self.flip_x = self.attack_direction.x < 0 if self.state in ["SLAM", "RAGE_DASH"] else player_pos.x < self.pos.x
         
         if getattr(self, 'hit_timer', 0) > 0: self.hit_timer -= 1
         if self.frost_timer > 0: self.frost_timer -= 1
@@ -1970,7 +1991,7 @@ class BerserkerBoss:
         side = facing.rotate(90)
         pulse, aura_base, aura_color = abs(math.sin(self.state_timer * 0.14)), self.size // 2 + (34 if self.phase == 2 else 24), RED if self.phase == 2 else ORANGE
 
-        anim_frames = animations.get("boss_red") # 讀取第三階Boss圖片
+        anim_frames = animations.get("boss_red") # 讀取第三隻Boss圖片
 
         if self.state == "TRANSFORM":
             for i in range(5): pygame.draw.circle(surface, RED if i % 2 else YELLOW, (cx, cy), int(aura_base + i * 18 + pulse * 12), 3)
@@ -2009,10 +2030,10 @@ class BerserkerBoss:
         shoulder_l, shoulder_r, waist_l, waist_r = body_top + side * 34, body_top - side * 34, body_bottom + side * 22, body_bottom - side * 22
         body_points = [shoulder_l, shoulder_r, waist_r, waist_l]
         
-        # 繪製本體 (有圖片就畫圖片，沒有才畫幾何機甲)
+        # 繪製本體 
         if anim_frames and self.state != "DEFEAT":
             img = anim_frames[int(pygame.time.get_ticks() / 150) % len(anim_frames)]
-            if facing.x < 0: img = pygame.transform.flip(img, True, False) # 面向翻轉
+            if getattr(self, 'flip_x', False): img = pygame.transform.flip(img, True, False) # 根據攻擊方向決定是否水平翻轉圖片
             if getattr(self, 'hit_timer', 0) > 0: img = img.copy(); img.fill((255, 255, 255, 150), special_flags=pygame.BLEND_RGBA_ADD)
             elif self.frost_timer > 0: img = img.copy(); img.fill((100, 200, 255, 100), special_flags=pygame.BLEND_RGBA_MULT)
             surface.blit(img, img.get_rect(center=(cx, cy)))
