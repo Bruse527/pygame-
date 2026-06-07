@@ -31,7 +31,7 @@ pygame.mouse.set_visible(False)  #隱藏系統windows預設滑鼠游標
 # real_screen 是實際顯示的視窗，screen 變成我們內部固定 1024x768 的畫布
 real_screen = pygame.display.set_mode((BASE_WIDTH, BASE_HEIGHT), pygame.RESIZABLE)
 screen = pygame.Surface((BASE_WIDTH, BASE_HEIGHT)) 
-pygame.display.set_caption("末日肉鴿生存 - 最終融合版")
+pygame.display.set_caption("末日肉鴿生存")
 
 # 切換全螢幕模式，內部畫布仍保持固定大小
 def toggle_fullscreen():
