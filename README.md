@@ -496,8 +496,9 @@ BOSS
 講稿
 
 遊戲視窗管理系統運作機制
-toggle_fullscreen 函式與自適應解析度縮放機制。 當玩家按下全螢幕快捷鍵時，程式會動態切換 pygame.FULLSCREEN 旗標，同時透過 pygame.display.Info() 取得當前螢幕實際尺寸。關鍵在於內部畫布 screen 始終保持固定的 1024×768 解析度，而實際顯示視窗 real_screen 則根據全螢幕或視窗模式自動縮放。遊戲也根據 SCALE 變數動態計算四種字體大小（font、large_font、small_font、tiny_font），使用 max() 函式確保字體尺寸永遠不會低於最小可讀閾值。當視窗被改變大小時，所有依賴 SCALE 的UI元素會自動調整，使得各種裝置上的遊戲表現保持一致，文字始終可讀。
+「update_scale_factors 函式與自適應解析度縮放機制。當玩家切換視窗模式時，程式會自動計算 scale_factor 縮放比例與居中所需的 offset_x 與 offset_y 偏移量。關鍵在於內部虛擬畫布 screen 始終保持固定的 BASE_WIDTH 與 BASE_HEIGHT（1024x768）進行遊戲與碰撞邏輯更新，而實際顯示視窗 real_screen 則透過 pygame.transform.smoothscale 進行平滑映射，使各種解析度螢幕上的遊戲表現與畫面比例保持一致。」
 相機系統與屏幕震動機制、多層繪製順序。 遊戲透過 camera_x 和 camera_y 追蹤玩家視角位置，所有世界座標的物體在繪製時都需減去相機偏移量以實現視角跟隨效果。當Boss受到攻擊或發動大招時，screen_shake 變數會被設定為非零值，系統每幀自動衰減並在繪製時動態偏移，營造出強烈衝擊感。遊戲採用嚴格的繪製優先級制度：先繪製背景，再繪製地圖物件、敵人和子彈，然後是玩家，最後是UI面板（任務欄、Boss血條、迷你地圖）。這個順序確保前景元素永遠出現在背景之上，UI永遠浮在遊戲世界之上不會被遮擋，使複雜場景也能清晰呈現。
+
 
 圖片、音效、動畫加載系統運作機制
 load_image 與 load_animation 函式的資源載入與容錯機制、load_sound 與專屬武器音效備援機制、多通道音效管理。 遊戲透過 os.path.exists() 預先檢查資源檔案是否存在，當檔案存在時，pygame.image.load() 搭配 .convert_alpha() 進行最佳化載入，使用 pygame.transform.scale() 統一縮放至指定尺寸，所有資源都被集中存放在全域字典 images、animations 和 sounds 中。對於不存在的檔案，系統會設定該資源為 None 並自動建立缺失的資料夾，確保遊戲不會中斷。遊戲在初始化時透過 pygame.mixer.set_num_channels(64) 配置64個獨立音效通道，每個音效都統一設定音量，而武器音效則透過 load_weapon_sound() 函式實現智能備援機制：當指定檔案缺失時自動改用通用音效替代，確保遊戲流程不被打斷。背景音樂使用 pygame.mixer.music.play(loops=-1) 實現無限循環，與音效層完全分離，即使激烈戰鬥中音效頻繁重疊也不會中斷背景樂。
