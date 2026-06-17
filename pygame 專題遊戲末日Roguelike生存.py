@@ -4702,23 +4702,22 @@ while running == True:
             brightness = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.001 + i))
             pygame.draw.circle(screen, (brightness, brightness, brightness), (rx, ry), 1)
         
+        # 升級選單、死亡畫面、對話框等
+    if gameState == "MENU":
+        screen.fill(BLACK)
+        for i in range(100):
+            rx = (i * 37) % WIDTH
+            ry = (i * 23) % HEIGHT
+            brightness = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.001 + i))
+            pygame.draw.circle(screen, (brightness, brightness, brightness), (rx, ry), 1)
+        
+        #遊戲名稱標題
         title = large_font.render("末日肉鴿生存", True, BLUE)
-        title_glow = large_font.render("末日Roguelike生存", True, (0, 100, 255))
-        title_glow.set_alpha(80) 
         title_x = WIDTH//2 - title.get_width()//2
         title_y = HEIGHT//2 - 120
         
-        screen.blit(title_glow, (title_x - 2, title_y - 2))# 為了營造發光效果把標題渲染多次並稍微偏移位置
-        screen.blit(title_glow, (title_x - 2, title_y + 2))#
-        screen.blit(title_glow, (title_x + 2, title_y - 2))
-        screen.blit(title_glow, (title_x + 2, title_y + 2))
-        screen.blit(title_glow, (title_x, title_y - 3))
-        screen.blit(title_glow, (title_x, title_y + 3))
-        screen.blit(title_glow, (title_x - 3, title_y))
-        screen.blit(title_glow, (title_x + 3, title_y))
-        
         screen.blit(title, (title_x, title_y))
-        screen.blit(font.render("末日肉鴿RPG", True, WHITE), (WIDTH//2 - 60, HEIGHT//2 - 50))
+        screen.blit(font.render("末日Roguelike生存", True, WHITE), (WIDTH//2 - 60, HEIGHT//2 - 50))
 
         draw_hover_button(screen, start_button, "開始遊戲", (50, 150, 50), (100, 200, 100))
         # 按鈕名稱
@@ -4728,6 +4727,7 @@ while running == True:
         # 呼叫指南函式
         if showChangelog:
             drawGuidePopup(screen)
+
     # 難易度選單
     elif gameState == "DIFFICULTY":
         screen.fill(BLACK)
