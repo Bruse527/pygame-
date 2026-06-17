@@ -4715,9 +4715,19 @@ while running == True:
         title = large_font.render("末日肉鴿生存", True, BLUE)
         title_x = WIDTH//2 - title.get_width()//2
         title_y = HEIGHT//2 - 120
-        
         screen.blit(title, (title_x, title_y))
-        screen.blit(font.render("末日Roguelike生存", True, WHITE), (WIDTH//2 - 60, HEIGHT//2 - 50))
+
+        # 大標題置中
+        title = large_font.render("末日肉鴿生存", True, BLUE)
+        title_x = WIDTH//2 - title.get_width()//2
+        title_y = HEIGHT//2 - 120
+        screen.blit(title, (title_x, title_y))
+        
+        # 副標題動態置中
+        subtitle = font.render("末日Roguelike生存", True, WHITE)
+        subtitle_x = WIDTH//2 - subtitle.get_width()//2
+        subtitle_y = HEIGHT//2 - 50
+        screen.blit(subtitle, (subtitle_x, subtitle_y))
 
         draw_hover_button(screen, start_button, "開始遊戲", (50, 150, 50), (100, 200, 100))
         # 按鈕名稱
