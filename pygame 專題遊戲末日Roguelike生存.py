@@ -2646,8 +2646,8 @@ guide_text_lines = [
     "每次挑戰都會遭遇隨機的敵人與3種BOSS，",
     "抵達撤離點回到地堡，抵達測離點回到地堡或是死亡的循環。",
     "",
-    "[遊戲基礎操作]",
-    "{開始遊戲前請先切換成英文輸入法，否則無法操作}",
+    "[遊戲基礎操作:無敵模式要按下(上上下下左右左右BA)按鍵]",
+    "{開始遊戲前請先切換成英文輸入法，否則無法操作。}",
     "移動: WASD",
     "射擊: 滑鼠左鍵",
     "技能: 滑鼠右鍵",
@@ -2712,9 +2712,9 @@ guide_text_lines = [
     "製作最久的功能是戰鬥系統與BOSS，從最初的簡單射擊",
     "演變為現在包含多種子彈機制、三大特色BOSS的機制。",
     "還有所有的UI介面也花了非常多時間因為找不到滿意的",
-    "圖片設計，只好直接寫在遊戲中在逐一微調，",
-    "不過寫完一部分之後就只要複製修改就好了。",
-    "因為沒有足夠時間繪製圖片，圖片素材使用的是免費素材，",
+    "圖片設計，只好直接寫在遊戲",
+    "不過寫完一部分的按鈕之後就只要複製在遊戲中在慢慢逐一微調",
+    "因為沒有足夠時間繪製角色等圖片，圖片素材使用的是免費素材，",
     "使用 itch.io 網站上的免費素材，",
     "音效則是使用 pixabay 上的免費音效",
     "參考資料大多是pygame遊戲製作相關文章以及，",
@@ -3626,7 +3626,8 @@ while running == True:
         if extractionTimer <= 0 and bossArmyActive == False:
             bossArmyActive = True
             dialogueSys.start("timeout_warning", "PLAYING")
-        
+            continue # 跳出對話避(忘了加導致後面邏輯錯亂)
+
         if bossArmyActive == True:
             if pygame.time.get_ticks() % 15 == 0:
                 e = Enemy(player.level + 15, True)
@@ -3644,6 +3645,7 @@ while running == True:
                 if extractProgress >= 120:
                     playSound("levelup")
                     enterBunker(True)
+                    continue #切換回基地後強制結束這回合
             else:
                 extractProgress = 0
 
@@ -3686,7 +3688,8 @@ while running == True:
             chooseUpgradeCards()
             gameState = "LEVEL_UP"
             playSound("levelup")
-        
+            continue 
+
         if taskSystem.current_task != None and taskSystem.current_task.is_completed == True:
             taskSystem.current_task.apply_reward(player)
             playSound("levelup")
@@ -3709,7 +3712,7 @@ while running == True:
             isBossActive = True
             pygame.mixer.music.pause()
             playSound("boss_bgm", -1)
-
+            continue # 強制進入對話狀態不執行後面的開火與子彈判定
         mouse_btns = pygame.mouse.get_pressed()
         world_mouse_x = mx + camX
         world_mouse_y = my + camY
@@ -3923,9 +3926,18 @@ while running == True:
                     if b.is_piercing == False: break 
             
             # Boss碰撞判定 (只扣血，不處理死亡掉落)
+            # Boss碰撞判定 (只扣血，不處理死亡掉落)
             if isBossActive and boss != None and b.rect.colliderect(boss.rect) and boss.state != "DEFEAT":
                 hit_something = True
-                if boss.can_take_damage() == False:
+                
+                can_dmg = True
+                if hasattr(boss, "can_take_damage"):
+                    if callable(boss.can_take_damage):
+                        can_dmg = boss.can_take_damage()
+                    else:
+                        can_dmg = boss.can_take_damage
+                
+                if can_dmg == False:
                     # Boss受傷無敵中
                     for i in range(5): particles.append(Particle(boss.x, boss.y, GRAY))
                 else:
@@ -3939,7 +3951,11 @@ while running == True:
                     if b.is_crit or b.damage >= 50:
                         if screenShake < 8: screenShake = 8
                         pygame.time.delay(15)
-                    damage_texts.append(DamageText(boss.x, boss.y - 20, b.damage, RED if b.is_crit else WHITE, b.is_crit))
+                    
+                    cColor = WHITE
+                    if b.is_crit: cColor = RED
+                    damage_texts.append(DamageText(boss.x, boss.y - 20, b.damage, cColor, b.is_crit))
+                    
                     for i in range(8): particles.append(Particle(boss.x, boss.y, YELLOW))
                     playSound("hit")
                     taskSystem.update_progress("damage", b.damage)
